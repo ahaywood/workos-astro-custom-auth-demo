@@ -1,0 +1,59 @@
+---
+import Main from "../layouts/Main.astro";
+import { WorkOS } from "@workos-inc/node";
+import { sealData } from "iron-session";
+
+if (Astro.request.method === "POST") {
+  try {
+    const workos = new WorkOS(import.meta.env.WORKOS_API_KEY);
+    const data = await Astro.request.formData();
+    const email = data.get("email");
+    const password = data.get("password");
+
+    const { user, accessToken, refreshToken, impersonator } =
+      await workos.userManagement.authenticateWithPassword({
+        email: String(email),
+        password: String(password),
+        clientId: `${import.meta.env.WORKOS_CLIENT_ID}`,
+      });
+
+    // The refreshToken should never be accessible publicly,
+    // hence why we encrypt it in the cookie session.
+    // Alternatively you could persist the refresh token in a backend database
+    const encryptedSession = await sealData(
+      { accessToken, refreshToken, user, impersonator },
+      { password: import.meta.env.WORKOS_COOKIE_PASSWORD }
+    );
+
+    // Store the session in a cookie
+    Astro.cookies.set("wos-session", encryptedSession, {
+      path: "/",
+      httpOnly: true,
+      secure: true,
+      sameSite: "lax",
+    });
+
+    return Astro.redirect("/admin/dashboard");
+  } catch (error) {
+    console.error(error);
+  }
+}
+---
+
+<Main>
+  <h1>Login</h1>
+
+  <form method="POST">
+    <div>
+      <label for="email">Email</label><br />
+      <input type="email" id="email" name="email" required />
+    </div>
+
+    <p>
+      <label for="password">Password</label><br />
+      <input type="password" id="password" name="password" required />
+    </p>
+
+    <button type="submit">Login</button>
+  </form>
+</Main>

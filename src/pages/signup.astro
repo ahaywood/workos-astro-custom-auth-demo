@@ -1,0 +1,76 @@
+---
+import Main from "../layouts/Main.astro";
+import { WorkOS } from "@workos-inc/node";
+
+if (Astro.request.method === "POST") {
+  try {
+    const workos = new WorkOS(import.meta.env.WORKOS_API_KEY);
+    const data = await Astro.request.formData();
+    const firstName = data.get("firstName");
+    const lastName = data.get("lastName");
+    const email = data.get("email");
+    const password = data.get("password");
+    const confirmPassword = data.get("confirmPassword");
+
+    // validate the password
+    if (password !== confirmPassword) {
+      throw new Error("Passwords do not match");
+    }
+
+    // Do something with the data
+    // create the user
+    const user = await workos.userManagement.createUser({
+      firstName: String(firstName),
+      lastName: String(lastName),
+      email: String(email),
+      password: String(password),
+      emailVerified: true,
+    });
+
+    // redirect the user to the login page
+    return Astro.redirect("/login");
+  } catch (error) {
+    if (error instanceof Error) {
+      console.error(error.message);
+    }
+  }
+}
+---
+
+<Main>
+  <h1>Sign Up</h1>
+
+  <form method="POST">
+    <div>
+      <label for="firstName">First Name</label><br />
+      <input type="text" id="firstName" name="firstName" required />
+    </div>
+
+    <div>
+      <label for="lastName">Last Name</label><br />
+      <input type="text" id="lastName" name="lastName" required />
+    </div>
+
+    <div>
+      <label for="email">Email</label><br />
+      <input type="email" id="email" name="email" required />
+    </div>
+
+    <div>
+      <label for="password">Password</label><br />
+      <input type="password" id="password" name="password" required />
+    </div>
+
+    <div>
+      <label for="confirmPassword">Confirm Password</label><br />
+      <input
+        type="password"
+        id="confirmPassword"
+        name="confirmPassword"
+        required
+      />
+    </div>
+
+    <button type="submit">Sign Up</button>
+  </form>
+</Main>

@@ -1,0 +1,25 @@
+---
+import Main from "../layouts/Main.astro";
+import { getUser } from "../lib/auth";
+const user = await getUser(Astro.cookies);
+---
+
+<Main>
+  <h1>Astro</h1>
+
+  {
+    user ? (
+      <>
+        <p>
+          Welcome {user.user.firstName}!<br />
+          You're logged in using {user.user.email}
+        </p>
+        <a href="/logout">Logout</a>
+      </>
+    ) : (
+      <p>
+        <a href="/login">Login</a> / <a href="/signup">Sign Up</a>
+      </p>
+    )
+  }
+</Main>
